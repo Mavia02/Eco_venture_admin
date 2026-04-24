@@ -1,0 +1,90 @@
+{
+  "project_info": {
+    "project_number": "547444130498",
+    "project_id": "ecoventure-app",
+    "storage_bucket": "ecoventure-app.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:547444130498:android:d531e7a699ee96a567b15b",
+        "android_client_info": {
+          "package_name": "com.example.eco_venture"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "547444130498-n6rbkid5620dsipjc9ub62c0rbralkjv.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.eco_venture",
+            "certificate_hash": "0f28edc0f4568c34269345bf69f8af19716c4d13"
+          }
+        },
+        {
+          "client_id": "547444130498-bov8shk21qfrhbi94rvt32bo03uq37qd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoobGFb4xRqYiZIW8Pypot__ngbbQjoIM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "547444130498-bov8shk21qfrhbi94rvt32bo03uq37qd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "547444130498-i7k9q2h5feklommt23ln3173p0j542tc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ecoVenture"
+              }
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:547444130498:android:4d63070bf1544bbc67b15b",
+        "android_client_info": {
+          "package_name": "com.example.eco_venture_admin_portal"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "547444130498-bov8shk21qfrhbi94rvt32bo03uq37qd.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCoobGFb4xRqYiZIW8Pypot__ngbbQjoIM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "547444130498-bov8shk21qfrhbi94rvt32bo03uq37qd.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "547444130498-i7k9q2h5feklommt23ln3173p0j542tc.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.ecoVenture"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
