@@ -1,8 +1,9 @@
 import 'package:firebase_database/firebase_database.dart';
 import 'package:eco_venture_admin_portal/models/modules_uploaded_model.dart';
 
-/// Logic: Exhaustive discovery service to aggregate ALL learning modules from RTDB.
-/// It addresses inconsistencies in naming conventions (Admin vs Teacher vs Global nodes).
+/// Logic: Final Robust Recursive Service to aggregate every learning module.
+/// This version is "Structure-Agnostic" and "Path-Resilient".
+/// It crawls the RTDB tree to find items based on data signatures and dynamic context updating.
 class ModuleService {
   ModuleService._();
   static final ModuleService instance = ModuleService._();
@@ -13,129 +14,112 @@ class ModuleService {
     List<ModuleContentModel> allModules = [];
 
     try {
-      // 1. DISCOVER ADMIN TREE (Admin -> {uid} -> [quizzes, QrHunts, stem, stories, etc])
+      // 1. CRAWL ADMIN TREE (Dives into Admin -> UID -> Folder -> ID)
       final adminSnapshot = await _db.ref('Admin').get();
       if (adminSnapshot.exists) {
-        final adminData = adminSnapshot.value as Map<dynamic, dynamic>;
-        adminData.forEach((adminId, content) {
-          if (content is Map) {
-            _recursiveDiscovery(content, 'admin', allModules);
-          }
-        });
+        _crawlNode(adminSnapshot.value, 'admin', allModules);
       }
 
-      // 2. DISCOVER TEACHER TREE (Teacher_Content -> {uid} -> [Multimedia, Quizzes, Stem, etc])
+      // 2. CRAWL TEACHER TREE (Dives into Teacher_Content -> UID -> Multimedia/Quizzes -> ID)
       final teacherSnapshot = await _db.ref('Teacher_Content').get();
       if (teacherSnapshot.exists) {
-        final teacherData = teacherSnapshot.value as Map<dynamic, dynamic>;
-        teacherData.forEach((teacherId, content) {
-          if (content is Map) {
-            _recursiveDiscovery(content, 'teacher', allModules);
-          }
-        });
+        _crawlNode(teacherSnapshot.value, 'teacher', allModules);
       }
 
-      // 3. DISCOVER GLOBAL ROOT NODES (For content not nested under a UID)
-      // This catches the "Global Stories" and "Global Videos" you add from the Admin panel.
-      await _scanGlobalRootNodes(allModules);
+      // 3. CRAWL GLOBAL ROOTS (Catches root-level modules not tied to a UID tree)
+      final List<String> globalRoots = [
+        'Quizzes',
+        'stem_challenges',
+        'StemChallenges',
+        'QrHunts',
+        'stories',
+        'videos',
+        'Multimedia',
+        'Tasks'
+      ];
+
+      for (var path in globalRoots) {
+        final snap = await _db.ref(path).get();
+        if (snap.exists) {
+          _crawlNode(snap.value, 'admin', allModules, pathContext: path);
+        }
+      }
 
       return allModules;
     } catch (e) {
-      print("Error in exhaustive module fetch: $e");
+      print("Error in exhaustive module crawl: $e");
       return [];
     }
   }
 
-  /// Logic: Scans root nodes like 'stories' or 'videos'.
-  /// These are usually global content added directly by the Admin.
-  Future<void> _scanGlobalRootNodes(List<ModuleContentModel> list) async {
-    final Map<String, String> roots = {
-      'Quizzes': 'Interactive Quiz',
-      'stem_challenges': 'STEM Challenges',
-      'StemChallenges': 'STEM Challenges',
-      'QrHunts': 'QR Based',
-      'stories': 'Multimedia Content',
-      'videos': 'Multimedia Content',
-    };
-
-    for (var entry in roots.entries) {
-      final snap = await _db.ref(entry.key).get();
-      if (snap.exists) {
-        String? specificType;
-        if (entry.key == 'stories') specificType = 'Story';
-        if (entry.key == 'videos') specificType = 'Video';
-
-        _extractItemData(snap.value, entry.value, 'admin', list, type: specificType);
-      }
-    }
-  }
-
-  /// Logic: Helper to identify the category by node key names (case-insensitive).
-  void _recursiveDiscovery(Map<dynamic, dynamic> node, String role, List<ModuleContentModel> list) {
-    node.forEach((key, value) {
-      final String k = key.toString().toLowerCase();
-
-      if (k.contains('quiz')) {
-        _extractItemData(value, 'Interactive Quiz', role, list);
-      }
-      else if (k.contains('stem')) {
-        _extractItemData(value, 'STEM Challenges', role, list);
-      }
-      else if (k.contains('hunt') || k.contains('qr')) {
-        _extractItemData(value, 'QR Based', role, list);
-      }
-      else if (k.contains('multimedia') || k.contains('storie') || k.contains('video')) {
-        // Multimedia can be nested (Multimedia -> Stories -> ID) or flat (Multimedia -> ID)
-        if (value is Map && value.values.any((v) => v is Map)) {
-          value.forEach((subType, items) {
-            _extractItemData(items, 'Multimedia Content', role, list,
-                type: subType.toString().replaceAll('ies', 'y').replaceAll('s', ''));
-          });
-        } else {
-          _extractItemData(value, 'Multimedia Content', role, list);
-        }
-      }
-    });
-  }
-
-  /// Logic: The core data extractor that handles mixed data formats (Folders vs Items).
-  void _extractItemData(dynamic data, String category, String defaultRole, List<ModuleContentModel> list, {String? type}) {
+  /// Logic: The Recursive Crawler.
+  /// It visits every node. It dynamically updates the pathContext when it hits
+  /// a folder name that indicates a module type (quiz, stem, hunt, multimedia).
+  void _crawlNode(dynamic data, String defaultRole, List<ModuleContentModel> list, {String? pathContext}) {
     if (data is! Map) return;
 
-    data.forEach((idOrCat, itemData) {
-      if (itemData is Map) {
-        // CASE A: This is a Category Folder (e.g. "Animals" -> { ID1: {...} })
-        // We detect this by checking if the children are also Maps.
-        if (itemData.values.any((v) => v is Map)) {
-          itemData.forEach((id, details) {
-            if (details is Map) _processAndAddToList(id, details, category, defaultRole, list, type: type);
-          });
+    data.forEach((key, value) {
+      if (value is Map) {
+        final String currentKey = key.toString().toLowerCase();
+
+        // Logic: Update context if current key is a type-indicator
+        String? nextContext = pathContext;
+        if (currentKey.contains('quiz') ||
+            currentKey.contains('stem') ||
+            currentKey.contains('hunt') ||
+            currentKey.contains('qr') ||
+            currentKey.contains('multimedia') ||
+            currentKey.contains('storie') ||
+            currentKey.contains('video')) {
+          nextContext = key.toString();
         }
-        // CASE B: This is a direct Module Item (e.g. "ID123" -> { title: "..." })
+
+        // Check if this map represents a specific module item
+        if (_isModuleItem(value)) {
+          _addModuleToList(key.toString(), value, defaultRole, list, nextContext);
+        }
+        // If not an item, it's a folder (UID, Category, or Group). Recurse.
         else {
-          _processAndAddToList(idOrCat.toString(), itemData, category, defaultRole, list, type: type);
+          _crawlNode(value, defaultRole, list, pathContext: nextContext);
         }
       }
     });
   }
 
-  /// Logic: Maps varied database fields (title vs topicName vs name) to a unified model.
-  void _processAndAddToList(String id, Map<dynamic, dynamic> details, String category, String defaultRole, List<ModuleContentModel> list, {String? type}) {
-    // Prevent duplicates in the analytics list
+  /// Logic: Detects if a Map is a Module based on known fields from your Add screens.
+  bool _isModuleItem(Map<dynamic, dynamic> map) {
+    return map.containsKey('title') ||
+        map.containsKey('topic_name') ||
+        map.containsKey('topicName') ||
+        map.containsKey('story_title') ||
+        map.containsKey('videoUrl') ||
+        map.containsKey('video_url') ||
+        map.containsKey('levels') || // Quiz Signature
+        map.containsKey('clues') ||  // QR Hunt Signature
+        map.containsKey('task_description'); // Fallback signature
+  }
+
+  void _addModuleToList(String id, Map<dynamic, dynamic> details, String defaultRole, List<ModuleContentModel> list, String? context) {
+    // 1. Uniqueness Guard: Prevent double-counting if an item is seen in two paths
     if (list.any((m) => m.id == id)) return;
 
-    // Support every possible key name found in your AddQuiz, AddStory, and AddVideo screens
+    // 2. Identify Category
+    String category = _identifyCategory(details, context);
+
+    // 3. Resolve Title: Check all variations
     final String title = details['title'] ??
         details['topic_name'] ??
         details['topicName'] ??
-        details['name'] ??
         details['story_title'] ??
+        details['name'] ??
+        details['quiz_title'] ??
         'Untitled Item';
 
-    // Identify the role using 'createdBy' or 'role' fields, fallback to path-based role
+    // 4. Resolve Role: Check for 'createdBy' or 'role' fields
     final dynamic rawRole = details['createdBy'] ??
         details['role'] ??
         details['created_by_role'] ??
+        details['uploadedByRole'] ??
         defaultRole;
 
     final String finalRole = rawRole.toString().toLowerCase().contains('admin') ? 'admin' : 'teacher';
@@ -146,7 +130,39 @@ class ModuleService {
       category: category,
       uploadedByRole: finalRole,
       authorName: finalRole == 'admin' ? 'Admin' : 'Teacher',
-      type: type ?? details['type'],
+      type: details['type'] ?? _inferSubtype(category, context, details),
     ));
+  }
+
+  /// Logic: Strong category identification.
+  /// Structural keys (levels/clues) take highest priority to avoid mislabeling.
+  String _identifyCategory(Map<dynamic, dynamic> details, String? context) {
+    // Priority 1: Structural Signatures
+    if (details.containsKey('levels')) return 'Interactive Quiz';
+    if (details.containsKey('clues')) return 'QR Based';
+
+    // Priority 2: Explicit Internal Category Field
+    if (details.containsKey('category')) {
+      final String cat = details['category'].toString().toLowerCase();
+      if (cat.contains('quiz')) return 'Interactive Quiz';
+      if (cat.contains('stem')) return 'STEM Challenges';
+      if (cat.contains('qr') || cat.contains('hunt')) return 'QR Based';
+    }
+
+    // Priority 3: Dynamic Path Context
+    final String ctx = (context ?? '').toLowerCase();
+    if (ctx.contains('quiz')) return 'Interactive Quiz';
+    if (ctx.contains('stem')) return 'STEM Challenges';
+    if (ctx.contains('hunt') || ctx.contains('qr')) return 'QR Based';
+
+    return 'Multimedia Content';
+  }
+
+  String? _inferSubtype(String category, String? context, Map<dynamic, dynamic> details) {
+    if (category != 'Multimedia Content') return null;
+    final String ctx = (context ?? '').toLowerCase();
+    if (ctx.contains('video') || details.containsKey('videoUrl') || details.containsKey('video_url')) return 'Video';
+    if (ctx.contains('audio')) return 'Audio';
+    return 'Story';
   }
 }
