@@ -16,6 +16,7 @@ import 'package:eco_venture_admin_portal/views/child_section/report_safety/admin
 import 'package:eco_venture_admin_portal/views/child_section/treasure_hunt/admin_add_treasure_hunt_screen.dart';
 import 'package:eco_venture_admin_portal/views/child_section/treasure_hunt/admin_edit_treasure_hunt_screen.dart';
 import 'package:eco_venture_admin_portal/views/child_section/treasure_hunt/admin_treasure_hunt_dashboard.dart';
+import 'package:eco_venture_admin_portal/views/child_section/widgets/teacher_view.dart'; // Import Teacher Screen
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
@@ -67,6 +68,13 @@ class ChildRouter {
         name: 'childHome',
         builder: (context, state) => const AdminChildHome(),
         routes: [
+          // NEW TEACHER MANAGEMENT ROUTE
+          GoRoute(
+            path: 'teacher-management',
+            name: 'teacherManagement',
+            builder: (context, state) => const TeacherManagementScreen(),
+          ),
+
           // 1. CHILDREN DIRECTORY DETAILS
           GoRoute(
             path: 'children-details',

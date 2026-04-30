@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
-import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 
@@ -11,7 +10,10 @@ import 'package:eco_venture_admin_portal/viewmodels/child_section/child_dashboar
 import 'package:eco_venture_admin_portal/viewmodels/child_section/modules_uploaded/module_uploaded_provider.dart';
 import 'package:eco_venture_admin_portal/viewmodels/child_section/active_challenges/active_challenge_provider.dart';
 import 'package:eco_venture_admin_portal/viewmodels/child_section/avg_progress/avg_progress_provider.dart';
-import 'package:eco_venture_admin_portal/views/child_section/widgets/Module_card.dart';
+
+// Import the new Teacher Management Screen
+import 'package:eco_venture_admin_portal/views/child_section/widgets/teacher_view.dart';
+import 'package:responsive_sizer/responsive_sizer.dart';
 
 class AdminChildHome extends ConsumerStatefulWidget {
   const AdminChildHome({super.key});
@@ -194,11 +196,11 @@ class _AdminChildHomeState extends ConsumerState<AdminChildHome> {
                 ),
                 _buildProgressCard(),
 
-                // Reward / Leaderboard Section
+                // Enhanced Teacher Management Section
                 Padding(
-                  padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
+                  padding: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.5.h),
                   child: Text(
-                    "Top Performers",
+                    "Teacher Management",
                     style: GoogleFonts.poppins(
                       fontSize: 18.sp,
                       fontWeight: FontWeight.w700,
@@ -206,7 +208,7 @@ class _AdminChildHomeState extends ConsumerState<AdminChildHome> {
                     ),
                   ),
                 ),
-                _buildRewardCard(),
+                _buildTeacherManagementCard(context),
 
                 SizedBox(height: 5.h),
               ],
@@ -217,7 +219,7 @@ class _AdminChildHomeState extends ConsumerState<AdminChildHome> {
     );
   }
 
-  /// Logic: Header section updated to remove the 'Add New Modules' button.
+  /// Logic: Header section
   Widget _buildHeaderSection() {
     return Padding(
       padding: EdgeInsets.symmetric(horizontal: 5.w),
@@ -232,7 +234,6 @@ class _AdminChildHomeState extends ConsumerState<AdminChildHome> {
               color: Colors.white,
             ),
           ),
-          // Button removed as requested
         ],
       ),
     );
@@ -453,108 +454,97 @@ class _AdminChildHomeState extends ConsumerState<AdminChildHome> {
     );
   }
 
-  Widget _buildRewardCard() {
-    final topPerformers = [
-      {"name": "Mehran A.", "points": "2310 pts", "rank": "1"},
-      {"name": "Muhammad M.", "points": "2280 pts", "rank": "2"},
-      {"name": "Ali A.", "points": "2150 pts", "rank": "3"},
-      {"name": "Bangash K.", "points": "2090 pts", "rank": "4"},
-    ];
-
-    return Container(
-      margin: EdgeInsets.symmetric(horizontal: 5.w, vertical: 1.h),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.06),
-        border: Border.all(color: Colors.white.withOpacity(0.1)),
-        borderRadius: BorderRadius.circular(24),
-      ),
-      child: Column(
-        children: [
-          Container(
-            padding: EdgeInsets.symmetric(vertical: 2.h),
-            decoration: const BoxDecoration(
-              color: Colors.amberAccent,
-              borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-            ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                const Icon(Icons.stars_rounded, color: Colors.black, size: 24),
-                SizedBox(width: 3.w),
-                Text(
-                  "Top Performing Children",
-                  style: GoogleFonts.poppins(
-                    fontSize: 16.sp,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.black,
-                  ),
-                ),
-                SizedBox(width: 3.w),
-                const Icon(Icons.stars_rounded, color: Colors.black, size: 24),
-              ],
-            ),
-          ),
-          Padding(
-            padding: EdgeInsets.all(2.h),
-            child: Column(
-              children: topPerformers.map((child) => _buildStudentRow(
-                child["name"]!,
-                child["points"]!,
-                child["rank"]!,
-              )).toList(),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildStudentRow(String name, String points, String rank) {
+  /// Logic: Enhanced Teacher Management card with premium UI
+  Widget _buildTeacherManagementCard(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.symmetric(vertical: 0.8.h),
-      child: Container(
-        decoration: BoxDecoration(
-          color: Colors.white.withOpacity(0.04),
-          borderRadius: BorderRadius.circular(15),
-        ),
-        padding: EdgeInsets.symmetric(horizontal: 4.w, vertical: 1.2.h),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Row(
-              children: [
-                CircleAvatar(
-                  backgroundColor: Colors.amberAccent,
-                  radius: 16,
-                  child: Text(
-                    rank,
-                    style: GoogleFonts.poppins(
-                      fontSize: 12.sp,
-                      fontWeight: FontWeight.w800,
-                      color: Colors.black,
-                    ),
-                  ),
-                ),
-                SizedBox(width: 4.w),
-                Text(
-                  name,
-                  style: GoogleFonts.poppins(
-                    fontSize: 14.5.sp,
-                    color: Colors.white,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+      padding: EdgeInsets.symmetric(horizontal: 5.w),
+      child: GestureDetector(
+        onTap: () => context.pushNamed('teacherManagement'),
+        child: Container(
+          padding: EdgeInsets.all(2.5.h),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(28),
+            // Logic: Deep gradient to make it pop against the background
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                const Color(0xFF3C6A67).withOpacity(0.8),
+                const Color(0xFF1B403D).withOpacity(0.9),
               ],
             ),
-            Text(
-              points,
-              style: GoogleFonts.poppins(
-                fontSize: 14.sp,
-                fontWeight: FontWeight.w700,
-                color: Colors.amberAccent,
+            border: Border.all(color: Colors.amberAccent.withOpacity(0.2), width: 1),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.2),
+                blurRadius: 15,
+                offset: const Offset(0, 8),
               ),
-            ),
-          ],
+            ],
+          ),
+          child: Row(
+            children: [
+              // Logic: Prominent Icon container with highlight effect
+              Container(
+                padding: EdgeInsets.all(1.5.h),
+                decoration: BoxDecoration(
+                  color: Colors.amberAccent,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.amberAccent.withOpacity(0.3),
+                      blurRadius: 10,
+                      spreadRadius: 2,
+                    )
+                  ],
+                ),
+                child: const Icon(
+                  Icons.supervised_user_circle_rounded,
+                  color: Colors.black,
+                  size: 32,
+                ),
+              ),
+              SizedBox(width: 5.w),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      "Registered Teachers",
+                      style: GoogleFonts.poppins(
+                        fontSize: 17.sp,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: 0.3,
+                      ),
+                    ),
+                    SizedBox(height: 0.5.h),
+                    Text(
+                      "Manage access & view directory",
+                      style: GoogleFonts.poppins(
+                        fontSize: 13.5.sp,
+                        color: Colors.white54,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              // Logic: Distinct action arrow
+              Container(
+                padding: EdgeInsets.all(1.h),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.arrow_forward_ios_rounded,
+                  color: Colors.amberAccent,
+                  size: 18,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

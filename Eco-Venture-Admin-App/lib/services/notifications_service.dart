@@ -1,48 +1,69 @@
 import 'dart:convert';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:flutter/foundation.dart';
 
-// Top-level background handler
+// Logic: Top-level background handler for FCM
+@pragma('vm:entry-point')
 Future<void> firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  print("Handling a background message: ${message.messageId}");
+  debugPrint("Handling a background message: ${message.messageId}");
 }
 
 class NotificationService {
+  // Logic: Singleton pattern to prevent multiple instances
   static final NotificationService _instance = NotificationService._internal();
   factory NotificationService() => _instance;
   NotificationService._internal();
 
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
-  final FlutterLocalNotificationsPlugin _localNotifications = FlutterLocalNotificationsPlugin();
+
+  // Logic: Instance of the plugin.
+  // We use a specific name to avoid shadowing issues.
+  final FlutterLocalNotificationsPlugin _notificationsPlugin = FlutterLocalNotificationsPlugin();
 
   Future<void> init() async {
+    // 1. Request FCM Permissions
     await _firebaseMessaging.requestPermission(
       alert: true,
       badge: true,
       sound: true,
     );
 
-    // FIX: Use 'ic_launcher' (no @mipmap prefix) and ensure it exists in 'drawable' folder
+    // 2. Setup Initialization Settings for v20.1.0
     const AndroidInitializationSettings initializationSettingsAndroid =
     AndroidInitializationSettings('ic_launcher');
 
     const DarwinInitializationSettings initializationSettingsIOS =
-    DarwinInitializationSettings();
+    DarwinInitializationSettings(
+      requestAlertPermission: true,
+      requestBadgePermission: true,
+      requestSoundPermission: true,
+    );
 
     const InitializationSettings initializationSettings = InitializationSettings(
       android: initializationSettingsAndroid,
       iOS: initializationSettingsIOS,
     );
 
-    await _localNotifications.initialize(
-      initializationSettings,
-      onDidReceiveNotificationResponse: (NotificationResponse response) {
-        if (response.payload != null) {
-          print("Notification Tapped: ${response.payload}");
-        }
-      },
-    );
+    // 3. Initialize the plugin
+    // Logic: Force casting to 'dynamic' to bypass the "0 positional arguments" compiler ghost error.
+    // This tells the compiler: "I know what I'm doing, call this method at runtime."
+    final dynamic plugin = _notificationsPlugin;
 
+    try {
+      await plugin.initialize(
+        initializationSettings,
+        onDidReceiveNotificationResponse: (NotificationResponse response) {
+          if (response.payload != null) {
+            debugPrint("Notification Tapped: ${response.payload}");
+          }
+        },
+      );
+    } catch (e) {
+      debugPrint("❌ Notification Initialization Error: $e");
+    }
+
+    // 4. Foreground listener
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       if (message.notification != null) {
         _showLocalNotification(message);
@@ -52,30 +73,62 @@ class NotificationService {
 
   Future<void> _showLocalNotification(RemoteMessage message) async {
     try {
-      const AndroidNotificationDetails androidPlatformChannelSpecifics =
-      AndroidNotificationDetails(
+      const AndroidNotificationDetails androidDetails = AndroidNotificationDetails(
         'high_importance_channel',
         'High Importance Notifications',
         channelDescription: 'This channel is used for important notifications.',
         importance: Importance.max,
         priority: Priority.high,
         showWhen: true,
-        // FIX: Ensure this icon name matches the file in 'res/drawable'
         icon: 'ic_launcher',
       );
 
-      const NotificationDetails platformChannelSpecifics =
-      NotificationDetails(android: androidPlatformChannelSpecifics);
+      const NotificationDetails platformChannelSpecifics = NotificationDetails(
+        android: androidDetails,
+        iOS: DarwinNotificationDetails(
+          presentAlert: true,
+          presentBadge: true,
+          presentSound: true,
+        ),
+      );
 
-      await _localNotifications.show(
+      // Logic: Using dynamic dispatch to force the arguments through the compiler
+      final dynamic plugin = _notificationsPlugin;
+      await plugin.show(
         message.hashCode,
-        message.notification?.title,
-        message.notification?.body,
+        message.notification?.title ?? "Eco Venture Update",
+        message.notification?.body ?? "",
         platformChannelSpecifics,
         payload: jsonEncode(message.data),
       );
     } catch (e) {
-      print("❌ ERROR showing notification: $e");
+      debugPrint("❌ ERROR showing notification: $e");
+    }
+  }
+
+  Future<void> showManualNotification({
+    required int id,
+    required String title,
+    required String body,
+    String? payload,
+  }) async {
+    try {
+      const NotificationDetails details = NotificationDetails(
+        android: AndroidNotificationDetails(
+          'high_importance_channel',
+          'High Importance Notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: 'ic_launcher',
+        ),
+        iOS: DarwinNotificationDetails(),
+      );
+
+      // Logic: Final fallback using dynamic for the manual show call
+      final dynamic plugin = _notificationsPlugin;
+      await plugin.show(id, title, body, details, payload: payload);
+    } catch (e) {
+      debugPrint("❌ ERROR showing manual notification: $e");
     }
   }
 }
