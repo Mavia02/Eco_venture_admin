@@ -1,5 +1,6 @@
 class ReportModel {
   final String id;
+  final String reporterId; // Logic: Added to track the User UID for RTDB pathing
   final String source; // 'child', 'teacher', 'system'
   final String reporterName;
   final String issueType; // 'Inappropriate Content', 'Bug', 'Bullying'
@@ -11,6 +12,7 @@ class ReportModel {
 
   ReportModel({
     required this.id,
+    required this.reporterId, // Logic: Required for nested database updates
     required this.source,
     required this.reporterName,
     required this.issueType,
@@ -21,10 +23,11 @@ class ReportModel {
     this.isResolved = false,
   });
 
-  // Convert to Map for Firebase
+  // Logic: Updated to include reporterId
   Map<String, dynamic> toMap() {
     return {
       'id': id,
+      'reporterId': reporterId,
       'source': source,
       'reporterName': reporterName,
       'issueType': issueType,
@@ -36,10 +39,11 @@ class ReportModel {
     };
   }
 
-  // Create object from Map
+  // Logic: Updated to include reporterId from Map
   factory ReportModel.fromMap(String id, Map<String, dynamic> map) {
     return ReportModel(
       id: id,
+      reporterId: map['reporterId'] ?? '',
       source: map['source'] ?? 'system',
       reporterName: map['reporterName'] ?? 'Unknown',
       issueType: map['issueType'] ?? 'General',
@@ -51,9 +55,10 @@ class ReportModel {
     );
   }
 
-  // CopyWith for immutable updates
+  // Logic: Preserved and updated copyWith
   ReportModel copyWith({
     String? id,
+    String? reporterId,
     String? source,
     String? reporterName,
     String? issueType,
@@ -65,6 +70,7 @@ class ReportModel {
   }) {
     return ReportModel(
       id: id ?? this.id,
+      reporterId: reporterId ?? this.reporterId,
       source: source ?? this.source,
       reporterName: reporterName ?? this.reporterName,
       issueType: issueType ?? this.issueType,
@@ -76,10 +82,11 @@ class ReportModel {
     );
   }
 
-  // Factory for mock data (replace with fromMap later)
+  // Logic: Preserved your mock factory for testing
   factory ReportModel.mock(int index) {
     return ReportModel(
       id: 'report_$index',
+      reporterId: 'user_$index',
       source: index % 2 == 0 ? 'Child' : 'Teacher',
       reporterName: index % 2 == 0 ? 'Ali Khan' : 'Ms. Fatima',
       issueType: index % 3 == 0 ? 'Inappropriate Content' : 'Bug Report',

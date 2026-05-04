@@ -136,7 +136,7 @@ class _BottomNavChildState extends State<BottomNavChild>
             SizedBox(height: 0.5.h),
             AnimatedDefaultTextStyle(
               duration: const Duration(milliseconds: 200),
-              style: GoogleFonts.poppins( // Switched to Poppins for DNA consistency
+              style: GoogleFonts.poppins(
                 color: isActive
                     ? Colors.amberAccent
                     : Colors.white.withOpacity(0.4),

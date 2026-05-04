@@ -25,5 +25,6 @@ final teachersStreamProvider = StreamProvider<List<Map<String, dynamic>>>((ref) 
 /// 4. Provide the UI Logic & Action Handler (ViewModel)
 final teacherActionProvider = StateNotifierProvider<TeacherViewModel, TeacherState>((ref) {
   final service = ref.watch(teacherServiceProvider);
-  return TeacherViewModel(service);
+
+  return TeacherViewModel(service, ref);
 });

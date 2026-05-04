@@ -3,20 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:responsive_sizer/responsive_sizer.dart';
 import 'package:go_router/go_router.dart';
-import '../../../models/report_model.dart';
-
-// Logic: Preserving your existing mock provider
-final safetyReportProvider = StateNotifierProvider<SafetyReportNotifier, List<ReportModel>>((ref) {
-  return SafetyReportNotifier();
-});
-
-class SafetyReportNotifier extends StateNotifier<List<ReportModel>> {
-  SafetyReportNotifier() : super([]);
-
-  void resolveReport(String id) {
-    debugPrint("Mock: Report $id resolved locally.");
-  }
-}
+import 'package:eco_venture_admin_portal/models/report_model.dart';
+// Logic: Added import for the service used in the Notifier
+import 'package:eco_venture_admin_portal/services/admin_report_service.dart';
+// Logic: Import the real provider from the Command Center to trigger resolution
+import 'package:eco_venture_admin_portal/views/child_section/report_safety/admin_safety_report_screen.dart';
 
 class AdminReportDetailScreen extends ConsumerWidget {
   final ReportModel report;
@@ -85,7 +76,8 @@ class AdminReportDetailScreen extends ConsumerWidget {
                           border: Border.all(color: Colors.white.withOpacity(0.08)),
                         ),
                         child: Text(
-                          report.details,
+                          // Logic: Normalized data from description/parentNote/details fields
+                          report.details.isEmpty ? "No additional details provided." : report.details,
                           style: GoogleFonts.poppins(
                             fontSize: 14.5.sp,
                             height: 1.6,
@@ -108,14 +100,19 @@ class AdminReportDetailScreen extends ConsumerWidget {
                           label: "Mark as Resolved",
                           icon: Icons.check_circle_rounded,
                           color: Colors.amberAccent,
-                          isPrimary: true, // Uses Black text like Home Add button
-                          onPressed: () {
-                            ref.read(safetyReportProvider.notifier).resolveReport(report.id);
-                            ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text("Report Resolved & Users Notified"),
-                              backgroundColor: Colors.green,
-                            ));
-                            context.pop();
+                          isPrimary: true,
+                          onPressed: () async {
+                            // Logic: Trigger resolution via the SafetyReportNotifier
+                            // This notifier MUST use the AdminReportService for RTDB updates
+                            await ref.read(safetyReportProvider.notifier).resolveReport(report);
+
+                            if (context.mounted) {
+                              ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                                content: Text("Report Marked as Resolved in Database ✅"),
+                                backgroundColor: Colors.green,
+                              ));
+                              context.pop();
+                            }
                           },
                         ),
                       ] else
@@ -293,5 +290,34 @@ class AdminReportDetailScreen extends ConsumerWidget {
         ],
       ),
     );
+  }
+}
+
+// Logic: Provider definition added to resolve the "Undefined name" error in both screens
+final safetyReportProvider = StateNotifierProvider<SafetyReportNotifier, List<ReportModel>>(
+      (ref) => SafetyReportNotifier(),
+);
+
+// Logic: Included SafetyReportNotifier to handle Realtime Database resolution
+class SafetyReportNotifier extends StateNotifier<List<ReportModel>> {
+  final AdminReportService _service = AdminReportService();
+
+  SafetyReportNotifier() : super([]) {
+    _service.getAllAdminReportsStream().listen((reports) {
+      state = reports;
+    });
+  }
+
+  Future<void> resolveReport(ReportModel report) async {
+    try {
+      // Logic: Using the Service we built to update the RTDB paths
+      await _service.resolveReportAction(
+          report.id,
+          report.source,
+          reporterId: report.reporterId
+      );
+    } catch (e) {
+      debugPrint("Error resolving report: $e");
+    }
   }
 }

@@ -9,10 +9,10 @@ class TeacherManagementScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    // Logic: Watching the stream which will now be invalidated on delete
     final teachersAsync = ref.watch(teachersStreamProvider);
 
     return Scaffold(
-      // Logic: Removed background color here to use the gradient container for full-screen coverage
       body: Container(
         width: double.infinity,
         height: double.infinity,
@@ -20,7 +20,7 @@ class TeacherManagementScreen extends ConsumerWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: [Color(0xFF2F5755), Color(0xFF0A3431)], // Logic: Matches AdminChildHome DNA
+            colors: [Color(0xFF2F5755), Color(0xFF0A3431)],
           ),
         ),
         child: SafeArea(
@@ -81,7 +81,6 @@ class TeacherManagementScreen extends ConsumerWidget {
   }
 
   Widget _buildTeacherCard(BuildContext context, WidgetRef ref, Map<String, dynamic> teacher) {
-    // Logic: Now uses the robust isApproved check from the repository
     final isApproved = teacher['isApproved'] ?? false;
     final String id = teacher['id'];
 
@@ -120,7 +119,6 @@ class TeacherManagementScreen extends ConsumerWidget {
                 Container(
                   padding: EdgeInsets.symmetric(horizontal: 2.5.w, vertical: 0.6.h),
                   decoration: BoxDecoration(
-                    // Logic: Green for authorized, Orange for pending
                     color: isApproved ? Colors.greenAccent.withOpacity(0.1) : Colors.orangeAccent.withOpacity(0.1),
                     borderRadius: BorderRadius.circular(10),
                   ),
@@ -165,9 +163,16 @@ class TeacherManagementScreen extends ConsumerWidget {
               backgroundColor: Colors.redAccent,
               shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
             ),
-            onPressed: () {
-              ref.read(teacherActionProvider.notifier).rejectAndRemove(id);
-              Navigator.pop(context);
+            onPressed: () async {
+              // Logic: Wait for the wipe to complete and trigger the invalidation
+              await ref.read(teacherActionProvider.notifier).rejectAndRemove(id);
+              if (context.mounted) {
+                Navigator.pop(context);
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text("$name access revoked successfully"),
+                  backgroundColor: Colors.redAccent,
+                ));
+              }
             },
             child: Text("Nuclear Wipe", style: GoogleFonts.poppins(color: Colors.white, fontWeight: FontWeight.bold)),
           ),

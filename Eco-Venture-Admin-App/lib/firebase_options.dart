@@ -53,7 +53,9 @@ class DefaultFirebaseOptions {
     projectId: 'ecoventure-app',
     authDomain: 'ecoventure-app.firebaseapp.com',
     storageBucket: 'ecoventure-app.firebasestorage.app',
+    databaseURL: 'https://ecoventure-app-default-rtdb.firebaseio.com',
     measurementId: 'G-9C4EY7QH7W',
+
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -62,6 +64,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '547444130498',
     projectId: 'ecoventure-app',
     storageBucket: 'ecoventure-app.firebasestorage.app',
+    databaseURL: 'https://ecoventure-app-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -73,5 +76,6 @@ class DefaultFirebaseOptions {
     androidClientId: '547444130498-n6rbkid5620dsipjc9ub62c0rbralkjv.apps.googleusercontent.com',
     iosClientId: '547444130498-cknoptbir1m43juu6qbn5rt6nbi2572p.apps.googleusercontent.com',
     iosBundleId: 'com.example.ecoVentureAdminPortal',
+    databaseURL: 'https://ecoventure-app-default-rtdb.firebaseio.com',
   );
 }
